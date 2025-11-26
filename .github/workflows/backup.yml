@@ -1,0 +1,28 @@
+name: Supabase DB Daily Backup
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # каждый день в полночь
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+      - name: Backup database
+        run: supabase db dump --db-url "${{ secrets.SUPABASE_DB_URL }}" --out ./backup_$(date +'%Y%m%d').sql
+      - name: Commit backup file
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add backup_*.sql
+          git commit -m "Automated backup"
+          git push
